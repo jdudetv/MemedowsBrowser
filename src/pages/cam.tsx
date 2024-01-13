@@ -113,7 +113,7 @@ export default function () {
           )}px);`}
         >
           <div class="title-bar" style={"height: 28px"}>
-            <div class="title-bar-text">Command Prompt</div>
+            <div class="title-bar-text">Camera</div>
             <div class="title-bar-controls">
               <button aria-label="Minimize"></button>
               <button aria-label="Maximize"></button>
