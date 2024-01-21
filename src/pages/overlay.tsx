@@ -1,12 +1,19 @@
 import { render } from "solid-js/web";
 import { createStore, produce } from "solid-js/store";
-import { For, Index, createEffect, createSignal, useContext } from "solid-js";
+import {
+  For,
+  Index,
+  Show,
+  batch,
+  createEffect,
+  createSignal,
+  useContext,
+} from "solid-js";
 import { object, z } from "zod";
 
 import "xp.css";
 import { startWS } from "../websocket";
-import { EmotesContext } from "..";
-import { emotes } from "../emotes";
+import { EmotesContext } from "../";
 import taskbarMain from "../../images/TaskbarMain.png";
 import taskbarUp from "../../images/TaskBarUp.png";
 import startBarUp from "../../images/StartBarUp.png";
@@ -93,7 +100,7 @@ type taskbar = {
 };
 
 export default function () {
-  const emotes = useContext(EmotesContext)!;
+  const emotelist = useContext(EmotesContext)!;
   let chatstuff = JSON.parse(
     localStorage.getItem("chatStuff") ??
       JSON.stringify({ height: 800, width: 400, posX: 100, posY: 100 })
@@ -102,7 +109,7 @@ export default function () {
   let running = false;
   const [time, setTime] = createSignal<string>("");
   const [chatTransform, setchatTransform] = createSignal<chatProps>(chatstuff);
-  const [newEvent, setNewEvent] = createStore<taskbar[]>(
+  const [newEvents, setNewEvent] = createStore<taskbar[]>(
     JSON.parse(
       localStorage.getItem("taskbarEvents") ??
         JSON.stringify([
@@ -134,8 +141,8 @@ export default function () {
   );
 
   createEffect(() => {
-    localStorage.setItem("taskbarEvents", JSON.stringify(newEvent));
-    console.log(newEvent);
+    localStorage.setItem("taskbarEvents", JSON.stringify(newEvents));
+    console.log(newEvents);
   });
 
   createEffect(() => {
@@ -150,29 +157,30 @@ export default function () {
   });
 
   const eventLogic = (event: taskbar) => {
-    let data = [...newEvent];
-    data.splice(-1);
-    setNewEvent([...data, event]);
-    console.log(newEvent);
-    localStorage.setItem("eventList", JSON.stringify(newEvent));
+    setNewEvent(
+      produce((array) => {
+        array.splice(-1);
+        array.push(event);
+      })
+    );
+    console.log(newEvents);
+    localStorage.setItem("eventList", JSON.stringify(newEvents));
     setTimeout(() => {
       setNewEvent([
-        ...newEvent,
+        ...newEvents,
         { type: "placeholder", username: "", message: "", event: "follow" },
       ]);
-      localStorage.setItem("eventList", JSON.stringify(newEvent));
-      if (newEvent.length > 10) {
-        let array = [...newEvent];
-        array.splice(1, 1);
-        setNewEvent([...array]);
-        localStorage.setItem("eventList", JSON.stringify(newEvent));
+      localStorage.setItem("eventList", JSON.stringify(newEvents));
+      if (newEvents.length > 15) {
+        setNewEvent(produce((array) => array.splice(1, 1)));
+        localStorage.setItem("eventList", JSON.stringify(newEvents));
       }
     }, 500);
   };
 
   const queueLoop = () => {
     running = true;
-    eventLogic(queue.shift());
+    eventLogic(queue.pop()!);
     setTimeout(() => {
       if (queue.length !== 0) queueLoop();
       if (queue.length === 0) running = false;
@@ -181,16 +189,17 @@ export default function () {
 
   ws.addEventListener("message", (data) => {
     const PARSED = MESSAGE.parse(JSON.parse(data.data));
-
-    if (PARSED.type === "event") {
-      const { event, type, message, username, amount } = PARSED;
-      queue.push({ event, type, message, username, amount });
-      if (running === false) {
-        running = true;
-        queueLoop();
-        console.log("running");
+    batch(() => {
+      if (PARSED.type === "event") {
+        const { event, type, message, username, amount } = PARSED;
+        queue.push({ event, type, message, username, amount });
+        if (running === false) {
+          running = true;
+          queueLoop();
+          console.log("running");
+        }
       }
-    }
+    });
 
     if (PARSED.type === "chatSize") {
       let data = { ...chatTransform() };
@@ -263,11 +272,11 @@ export default function () {
           ];
         }, [] as { text: string; startIndex: number }[])
         .forEach(({ text, startIndex }) => {
-          if (CustomEmotes[text]) {
+          if (emotelist[text]) {
             let end = text.length - 1;
             indexes.set(startIndex, {
               index: startIndex + end,
-              src: CustomEmotes[text].url,
+              src: emotelist[text].url,
               source: "custom",
             });
           }
@@ -416,66 +425,63 @@ export default function () {
       <img class="bottom-0 absolute" src={taskbarMain}></img>
       <div
         class={`overflow-hidden bottom-0 absolute flex-row w-auto inline-flex ${
-          newEvent[newEvent.length - 1].type === "placeholder"
+          newEvents[newEvents.length - 1].type === "placeholder"
             ? ""
             : "transition-all duration-500"
         }`}
         style={`left: ${
-          newEvent[newEvent.length - 1].type === "placeholder" ? -5.2 : 6.25
+          newEvents[newEvents.length - 1].type === "placeholder" ? -5.2 : 6.25
         }%;`}
         // newEvent()[0] !== ""
         //   ? `animation-name: slide; animation-duration: 2s animation-delay: 2s;`
         //   : ``
       >
-        <For each={newEvent}>
-          {(events, index) => (
-            <div
-              class="flex-none"
-              style={`margin-left: 1px; ${
-                newEvent[newEvent.length - index() - 1].type === "false"
-                  ? "display: none"
-                  : ""
-              }`}
-            >
-              {newEvent[newEvent.length - index() - 1].event ? (
-                <img
-                  class="absolute"
-                  style={"bottom: 6px; margin-left: 4px;"}
-                  width={24}
-                  src={
-                    `../../images/${
-                      newEvent[newEvent.length - index() - 1].event === "cheer"
-                        ? newEvent[
-                            newEvent.length - index() - 1
-                          ]!.amount?.toString()
-                        : newEvent[newEvent.length - index() - 1].event ===
-                          "sub"
-                        ? newEvent[
-                            newEvent.length - index() - 1
-                          ]!.amount?.toString() + "month"
-                        : newEvent[newEvent.length - index() - 1].event
-                    }` + ".png"
-                  }
-                ></img>
-              ) : (
-                <></>
-              )}
+        <For each={newEvents}>
+          {(event, index) => {
+            const reversedEvent = () => event;
+            // newEvents[newEvents.length - index() - 1];
+            return (
               <div
-                class="text-white font-light absolute"
-                style={`font-family: Tahoma, "Trebuchet MS", sans-serif; margin-left: 32px; margin-top: 9px; font-size: 14px; max-width: 200px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;`}
+                class="flex-none"
+                style={`margin-left: 1px; ${
+                  reversedEvent().type === "false" ? "display: none" : ""
+                }`}
               >
-                {newEvent[newEvent.length - index() - 1] ??
-                newEvent[newEvent.length - index() - 1].username!.length > 12
-                  ? newEvent[newEvent.length - index() - 1].username?.substring(
-                      0,
-                      12
-                    )
-                  : newEvent[newEvent.length - index() - 1].username}{" "}
-                {newEvent[newEvent.length - index() - 1].message}
+                <Show when={reversedEvent().event}>
+                  {(event) => (
+                    <img
+                      class="absolute"
+                      style={"bottom: 6px; margin-left: 4px;"}
+                      width={24}
+                      src={
+                        images[
+                          `../../images/${
+                            event() === "cheer"
+                              ? reversedEvent()!.amount?.toString()
+                              : event() === "sub"
+                              ? reversedEvent()!.amount?.toString() + "month"
+                              : event()
+                          }` + ".png"
+                        ].default as string
+                      }
+                    />
+                  )}
+                </Show>
+                <div
+                  class="text-white font-light absolute"
+                  style={`font-family: Tahoma, "Trebuchet MS", sans-serif; margin-left: 32px; margin-top: 9px; font-size: 14px; max-width: 200px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;`}
+                >
+                  {reversedEvent() ?? reversedEvent().username!.length > 12
+                    ? newEvents[
+                        newEvents.length - index() - 1
+                      ].username?.substring(0, 12)
+                    : reversedEvent().username}{" "}
+                  {reversedEvent().message}
+                </div>
+                <img class="transition-all" src={taskbarUp}></img>
               </div>
-              <img class="transition-all" src={taskbarUp}></img>
-            </div>
-          )}
+            );
+          }}
         </For>
       </div>
 
