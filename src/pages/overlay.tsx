@@ -159,20 +159,19 @@ export default function () {
   const eventLogic = (event: taskbar) => {
     setNewEvent(
       produce((array) => {
-        array.splice(-1);
-        array.push(event);
+        array.shift();
+        array.unshift(event);
       })
     );
-    console.log(newEvents);
     localStorage.setItem("eventList", JSON.stringify(newEvents));
     setTimeout(() => {
       setNewEvent([
-        ...newEvents,
         { type: "placeholder", username: "", message: "", event: "follow" },
+        ...newEvents,
       ]);
       localStorage.setItem("eventList", JSON.stringify(newEvents));
-      if (newEvents.length > 15) {
-        setNewEvent(produce((array) => array.splice(1, 1)));
+      if (newEvents.length > 10) {
+        setNewEvent(produce((array) => array.pop()));
         localStorage.setItem("eventList", JSON.stringify(newEvents));
       }
     }, 500);
@@ -192,7 +191,7 @@ export default function () {
     batch(() => {
       if (PARSED.type === "event") {
         const { event, type, message, username, amount } = PARSED;
-        queue.push({ event, type, message, username, amount });
+        queue.unshift({ event, type, message, username, amount });
         if (running === false) {
           running = true;
           queueLoop();
@@ -425,29 +424,26 @@ export default function () {
       <img class="bottom-0 absolute" src={taskbarMain}></img>
       <div
         class={`overflow-hidden bottom-0 absolute flex-row w-auto inline-flex ${
-          newEvents[newEvents.length - 1].type === "placeholder"
+          newEvents[0].type === "placeholder"
             ? ""
             : "transition-all duration-500"
         }`}
-        style={`left: ${
-          newEvents[newEvents.length - 1].type === "placeholder" ? -5.2 : 6.25
-        }%;`}
+        style={`left: ${newEvents[0].type === "placeholder" ? -5.2 : 6.2}%;`}
         // newEvent()[0] !== ""
         //   ? `animation-name: slide; animation-duration: 2s animation-delay: 2s;`
         //   : ``
       >
         <For each={newEvents}>
           {(event, index) => {
-            const reversedEvent = () => event;
-            // newEvents[newEvents.length - index() - 1];
+            const Event = () => event;
             return (
               <div
                 class="flex-none"
                 style={`margin-left: 1px; ${
-                  reversedEvent().type === "false" ? "display: none" : ""
+                  Event().type === "false" ? "display: none" : ""
                 }`}
               >
-                <Show when={reversedEvent().event}>
+                <Show when={Event().event}>
                   {(event) => (
                     <img
                       class="absolute"
@@ -457,9 +453,9 @@ export default function () {
                         images[
                           `../../images/${
                             event() === "cheer"
-                              ? reversedEvent()!.amount?.toString()
+                              ? Event()!.amount?.toString()
                               : event() === "sub"
-                              ? reversedEvent()!.amount?.toString() + "month"
+                              ? Event()!.amount?.toString() + "month"
                               : event()
                           }` + ".png"
                         ].default as string
@@ -471,12 +467,10 @@ export default function () {
                   class="text-white font-light absolute"
                   style={`font-family: Tahoma, "Trebuchet MS", sans-serif; margin-left: 32px; margin-top: 9px; font-size: 14px; max-width: 200px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;`}
                 >
-                  {reversedEvent() ?? reversedEvent().username!.length > 12
-                    ? newEvents[
-                        newEvents.length - index() - 1
-                      ].username?.substring(0, 12)
-                    : reversedEvent().username}{" "}
-                  {reversedEvent().message}
+                  {Event() ?? Event().username!.length > 12
+                    ? Event().username?.substring(0, 12)
+                    : Event().username}{" "}
+                  {Event().message}
                 </div>
                 <img class="transition-all" src={taskbarUp}></img>
               </div>
