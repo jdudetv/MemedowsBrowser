@@ -1,6 +1,6 @@
 import { render } from "solid-js/web";
 import { createStore, produce } from "solid-js/store";
-import { For, Index, createSignal } from "solid-js";
+import { For, Index, createEffect, createSignal } from "solid-js";
 import { object, z } from "zod";
 
 import "xp.css";
@@ -22,6 +22,7 @@ type chatMessage = {
     name: string;
     color: string;
     userType?: UserType;
+    id: string;
   };
   contents: Array<
     | {
@@ -42,6 +43,7 @@ const MESSAGE = z.discriminatedUnion("type", [
     message: z.string(),
     colour: z.string(),
     emotes: z.record(z.array(z.string())),
+    messageId: z.string(),
     userType: z.string(),
   }),
   z.object({
@@ -57,6 +59,14 @@ const MESSAGE = z.discriminatedUnion("type", [
     username: z.string(),
     message: z.string(),
     amount: z.optional(z.number()),
+  }),
+  z.object({
+    type: z.literal("chatDelete"),
+    id: z.string(),
+  }),
+  z.object({
+    type: z.literal("chatUserDelete"),
+    username: z.string(),
   }),
 ]);
 
@@ -84,24 +94,48 @@ export default function () {
   let running = false;
   const [time, setTime] = createSignal<string>("");
   const [chatTransform, setchatTransform] = createSignal<chatProps>(chatstuff);
-  const [newEvent, setNewEvent] = createStore<taskbar[]>([
-    { type: "false" },
-    {
-      event: "follow",
-      type: "event",
-      username: "testing",
-      message: "",
-    },
-    { type: "placeholder", username: "", message: "", event: "follow" },
-  ]);
-  const [newMessages, setNewMessages] = createStore<chatMessage[]>([
-    { contents: [{ type: "text", text: "Microsoft<R> Windows DOS" }] },
-    {
-      contents: [
-        { type: "text", text: "<C> Copyright Microsoft Corp 1990-2001." },
-      ],
-    },
-  ]);
+  const [newEvent, setNewEvent] = createStore<taskbar[]>(
+    JSON.parse(
+      localStorage.getItem("taskbarEvents") ??
+        `        [
+          { "type": "false" },
+          {
+            "event": "follow",
+            "type": "event",
+            "username": "testing",
+            "message": ""
+          },
+          { "type": "placeholder", "username": "", "message": "", "event": "follow" }
+        ]`
+    )
+  );
+  const [Messages, SetMessage] = createStore<chatMessage[]>(
+    JSON.parse(
+      localStorage.getItem("messages") ??
+        `[
+          {
+            "contents": [
+              { "type": "text", "text": "Microsoft<R> Windows DOS" }
+            ] 
+          },
+          {
+            "contents": [
+                      { "type": "text", "text": "<C> Copyright Microsoft Corp 1990-2001." }
+                        ]
+          }
+      ]`
+    )
+  );
+
+  createEffect(() => {
+    localStorage.setItem("taskbarEvents", JSON.stringify(newEvent));
+    console.log(newEvent);
+  });
+
+  createEffect(() => {
+    localStorage.setItem("messages", JSON.stringify(Messages));
+    console.log(Messages);
+  });
 
   const ws = startWS("ws://localhost:1890");
 
@@ -171,8 +205,30 @@ export default function () {
       localStorage.setItem("chatStuff", JSON.stringify(data));
     }
 
+    if (PARSED.type === "chatDelete") {
+      const { id } = PARSED;
+      Messages.forEach((messages, index) => {
+        if (id === messages.from?.id) {
+          let array = [...Messages];
+          array.splice(index, 1);
+          SetMessage(array);
+        }
+      });
+    }
+
+    if (PARSED.type === "chatUserDelete") {
+      const { username } = PARSED;
+      let newArray: chatMessage[] = [];
+      Messages.forEach((message) => {
+        if (username.toLowerCase() !== message.from?.name.toLowerCase()) {
+          newArray.push(message);
+        }
+      });
+      SetMessage(newArray);
+    }
+
     if (PARSED.type === "chatMessage") {
-      const { message, username, userType, emotes, colour } = PARSED;
+      const { message, username, userType, emotes, colour, messageId } = PARSED;
 
       type IndexData = {
         index: number;
@@ -250,7 +306,7 @@ export default function () {
         }
       }
 
-      setNewMessages(
+      SetMessage(
         produce((messages) => {
           if (messages.length === 40) {
             messages.splice(0, 1);
@@ -260,6 +316,7 @@ export default function () {
             from: {
               name: username,
               color: colour,
+              id: messageId,
               userType: userType === "" ? undefined : (userType as UserType),
             },
             contents,
@@ -305,7 +362,7 @@ export default function () {
               }px; overflow: hidden; display: flex; flex-direction: column-reverse; margin: -8px -5px;`}
             >
               <div>
-                <For each={newMessages}>
+                <For each={Messages}>
                   {(message) => (
                     <div class="whitespace-normal">
                       {message.from && (

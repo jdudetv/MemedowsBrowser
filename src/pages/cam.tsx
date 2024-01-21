@@ -59,34 +59,33 @@ export default function () {
     .then(async () => {
       await obs
         .call("GetSceneItemTransform", {
-          sceneItemId: 1,
+          sceneItemId: 3,
           sceneName: "CAMFORMAIN",
         })
         .then((data) => {
           // @ts-ignore
           let transform = data.sceneItemTransform as SceneItemTransform;
           setCamTransform({
-            sx: transform.scaleX as number,
-            sy: transform.scaleY as number,
-            xCrop: transform.cropLeft + transform.cropRight,
-            yCrop: transform.cropBottom + transform.cropTop,
+            sx: (transform.scaleX * 2) as number,
+            sy: (transform.scaleY * 2) as number,
+            xCrop: transform.cropLeft / 2 + transform.cropRight / 2,
+            yCrop: transform.cropBottom / 2 + transform.cropTop / 2,
           });
         });
     });
 
-  console.log(camTransform);
-
   obs.on("SceneItemTransformChanged", (data) => {
-    if (data.sceneItemId === 1 && data.sceneName === "CAMFORMAIN") {
+    console.log(data);
+    if (data.sceneItemId === 3 && data.sceneName === "CAMFORMAIN") {
       // @ts-ignore
       let t = data.sceneItemTransform as SceneItemTransform;
       if (t) {
         console.log(t);
         setCamTransform({
-          sx: t.scaleX,
-          sy: t.scaleY,
-          xCrop: t.cropLeft + t.cropRight,
-          yCrop: t.cropBottom + t.cropTop,
+          sx: t.scaleX * 2,
+          sy: t.scaleY * 2,
+          xCrop: t.cropLeft / 2 + t.cropRight / 2,
+          yCrop: t.cropBottom / 2 + t.cropTop / 2,
         });
       }
     }

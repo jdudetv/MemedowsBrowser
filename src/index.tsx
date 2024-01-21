@@ -4,6 +4,7 @@ import "./index.css";
 import { emotes } from "./emotes";
 import overlay from "./pages/overlay";
 import cam from "./pages/cam";
+import physics from "./pages/physics";
 
 export const CustomEmotes = await emotes();
 
@@ -13,6 +14,7 @@ render(
       <Routes>
         <Route path="/overlay" component={overlay} />
         <Route path="/cam" component={cam} />
+        <Route path="/physics" component={physics} />
       </Routes>
     </Router>
   ),
