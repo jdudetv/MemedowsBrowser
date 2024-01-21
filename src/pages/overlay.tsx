@@ -7,6 +7,13 @@ import "xp.css";
 import { startWS } from "../websocket";
 import { EmotesContext } from "..";
 import { emotes } from "../emotes";
+import taskbarMain from "../../images/TaskbarMain.png";
+import taskbarUp from "../../images/TaskBarUp.png";
+import startBarUp from "../../images/StartBarUp.png";
+import rightCorner from "../../images/RightCornerOverlay.png";
+const images = import.meta.glob("../../images/*.png", { eager: true });
+
+console.log(images);
 
 type UserType = "B" | "VIP" | "MOD" | "SUB";
 
@@ -406,7 +413,7 @@ export default function () {
           </div>
         </div>
       </div>
-      <img class="bottom-0 absolute" src="./images/taskbarmain.png"></img>
+      <img class="bottom-0 absolute" src={taskbarMain}></img>
       <div
         class={`overflow-hidden bottom-0 absolute flex-row w-auto inline-flex ${
           newEvent[newEvent.length - 1].type === "placeholder"
@@ -436,7 +443,7 @@ export default function () {
                   style={"bottom: 6px; margin-left: 4px;"}
                   width={24}
                   src={
-                    `./images/${
+                    `../../images/${
                       newEvent[newEvent.length - index() - 1].event === "cheer"
                         ? newEvent[
                             newEvent.length - index() - 1
@@ -466,7 +473,7 @@ export default function () {
                   : newEvent[newEvent.length - index() - 1].username}{" "}
                 {newEvent[newEvent.length - index() - 1].message}
               </div>
-              <img class="transition-all" src="./images/taskbarup.png"></img>
+              <img class="transition-all" src={taskbarUp}></img>
             </div>
           )}
         </For>
@@ -475,7 +482,7 @@ export default function () {
       <img
         class="bottom-0 absolute"
         style={`right: -${59}%; font-family: tahoma`}
-        src="./images/rightcorneroverlay.png"
+        src={rightCorner}
       ></img>
       <div
         class="bottom-1 right-4 absolute text-white"
@@ -483,7 +490,7 @@ export default function () {
       >
         {time()}
       </div>
-      <img class="bottom-0 absolute" src="./images/startbarup.png"></img>
+      <img class="bottom-0 absolute" src={startBarUp}></img>
     </div>
   );
 }
