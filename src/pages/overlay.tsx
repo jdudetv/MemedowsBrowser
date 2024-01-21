@@ -1,11 +1,11 @@
 import { render } from "solid-js/web";
 import { createStore, produce } from "solid-js/store";
-import { For, Index, createEffect, createSignal } from "solid-js";
+import { For, Index, createEffect, createSignal, useContext } from "solid-js";
 import { object, z } from "zod";
 
 import "xp.css";
 import { startWS } from "../websocket";
-import { CustomEmotes } from "..";
+import { EmotesContext } from "..";
 import { emotes } from "../emotes";
 
 type UserType = "B" | "VIP" | "MOD" | "SUB";
@@ -86,9 +86,10 @@ type taskbar = {
 };
 
 export default function () {
+  const emotes = useContext(EmotesContext)!;
   let chatstuff = JSON.parse(
     localStorage.getItem("chatStuff") ??
-      `{"height": 800, "width": 400, "posX": 100, "posY": 100}`
+      JSON.stringify({ height: 800, width: 400, posX: 100, posY: 100 })
   );
   let queue: taskbar[] = [];
   let running = false;
@@ -97,33 +98,31 @@ export default function () {
   const [newEvent, setNewEvent] = createStore<taskbar[]>(
     JSON.parse(
       localStorage.getItem("taskbarEvents") ??
-        `        [
-          { "type": "false" },
+        JSON.stringify([
+          { type: "false" },
           {
-            "event": "follow",
-            "type": "event",
-            "username": "testing",
-            "message": ""
+            event: "follow",
+            type: "event",
+            username: "testing",
+            message: "",
           },
-          { "type": "placeholder", "username": "", "message": "", "event": "follow" }
-        ]`
+          { type: "placeholder", username: "", message: "", event: "follow" },
+        ])
     )
   );
   const [Messages, SetMessage] = createStore<chatMessage[]>(
     JSON.parse(
       localStorage.getItem("messages") ??
-        `[
+        JSON.stringify([
           {
-            "contents": [
-              { "type": "text", "text": "Microsoft<R> Windows DOS" }
-            ] 
+            contents: [{ type: "text", text: "Microsoft<R> Windows DOS" }],
           },
           {
-            "contents": [
-                      { "type": "text", "text": "<C> Copyright Microsoft Corp 1990-2001." }
-                        ]
-          }
-      ]`
+            contents: [
+              { type: "text", text: "<C> Copyright Microsoft Corp 1990-2001." },
+            ],
+          },
+        ])
     )
   );
 
