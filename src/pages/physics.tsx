@@ -363,7 +363,7 @@ export default function () {
       width: 19.2,
       height: 10,
       x: 19.2 / 2,
-      y: 10.8 + 5,
+      y: 10.8 + 4.6,
     },
     //roof
     {
