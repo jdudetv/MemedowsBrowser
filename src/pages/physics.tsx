@@ -358,27 +358,31 @@ export default function () {
   });
 
   const borders: { width: number; height: number; x: number; y: number }[] = [
+    //Floor
     {
       width: 19.2,
       height: 10,
       x: 19.2 / 2,
-      y: 10.8 + 4.6,
+      y: 10.8 + 5,
     },
+    //roof
     {
       width: 19.2,
       height: 1,
       x: 19.2 / 2,
       y: -30,
     },
+    //right wall
     {
       width: 10,
-      height: 10.8,
+      height: 100,
       x: 19.2 + 5,
       y: 10.8 / 2,
     },
+    //Left Wall
     {
       width: 10,
-      height: 10.8,
+      height: 100,
       x: -5,
       y: 10.8 / 2,
     },
