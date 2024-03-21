@@ -101,10 +101,14 @@ export default function () {
             1920 * camTransform.sx - camTransform.xCrop * camTransform.sx
           )}px; background: none; transform: translateX(${Math.max(
             0,
-            960 - 960 * camTransform.sx + camTransform.xCrop * camTransform.sx
+            960 -
+              960 * camTransform.sx +
+              (camTransform.xCrop * camTransform.sx) / 2
           )}px) translateY(${Math.max(
             0,
-            526 - 526 * camTransform.sy + camTransform.yCrop * camTransform.sy
+            526 -
+              526 * camTransform.sy +
+              (camTransform.yCrop * camTransform.sy) / 2
           )}px);`}
         >
           <div class="title-bar" style={"height: 28px"}>
