@@ -393,7 +393,7 @@ export default function () {
                             </>
                           )}
                           <span style={`color: ${message.from.color}`}>
-                            {message.from.name}
+                            {message.from.name} 
                           </span>
                           {`> `}
                         </>

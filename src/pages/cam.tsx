@@ -66,10 +66,10 @@ export default function () {
           // @ts-ignore
           let transform = data.sceneItemTransform as SceneItemTransform;
           setCamTransform({
-            sx: (transform.scaleX * 2) as number,
-            sy: (transform.scaleY * 2) as number,
-            xCrop: transform.cropLeft / 2 + transform.cropRight / 2,
-            yCrop: transform.cropBottom / 2 + transform.cropTop / 2,
+            sx: transform.scaleX as number,
+            sy: transform.scaleY as number,
+            xCrop: transform.cropLeft + transform.cropRight,
+            yCrop: transform.cropBottom + transform.cropTop,
           });
         });
     });
@@ -82,10 +82,10 @@ export default function () {
       if (t) {
         console.log(t);
         setCamTransform({
-          sx: t.scaleX * 2,
-          sy: t.scaleY * 2,
-          xCrop: t.cropLeft / 2 + t.cropRight / 2,
-          yCrop: t.cropBottom / 2 + t.cropTop / 2,
+          sx: t.scaleX,
+          sy: t.scaleY,
+          xCrop: t.cropLeft + t.cropRight,
+          yCrop: t.cropBottom + t.cropTop,
         });
       }
     }
@@ -101,14 +101,10 @@ export default function () {
             1920 * camTransform.sx - camTransform.xCrop * camTransform.sx
           )}px; background: none; transform: translateX(${Math.max(
             0,
-            960 -
-              960 * camTransform.sx +
-              (camTransform.xCrop * camTransform.sx) / 2
+            960 - 960 * camTransform.sx + camTransform.xCrop * camTransform.sx
           )}px) translateY(${Math.max(
             0,
-            526 -
-              526 * camTransform.sy +
-              (camTransform.yCrop * camTransform.sy) / 2
+            526 - 526 * camTransform.sy + camTransform.yCrop * camTransform.sy
           )}px);`}
         >
           <div class="title-bar" style={"height: 28px"}>
