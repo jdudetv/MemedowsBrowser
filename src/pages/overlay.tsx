@@ -150,11 +150,174 @@ export default function () {
     console.log(Messages);
   });
 
-  const ws = startWS("ws://localhost:1890");
+  function connect() {
+    const ws = startWS("ws://localhost:1890");
 
-  ws.addEventListener("open", (event) => {
-    console.log("open");
-  });
+    ws.addEventListener("open", (event) => {
+      console.log("open");
+    });
+
+    ws.addEventListener("close", () => {
+      setTimeout(() => {
+        connect();
+      }, 1000);
+    });
+
+    ws.addEventListener("message", (data) => {
+      const PARSED = MESSAGE.parse(JSON.parse(data.data));
+      batch(() => {
+        if (PARSED.type === "event") {
+          const { event, type, message, username, amount } = PARSED;
+          queue.unshift({ event, type, message, username, amount });
+          if (running === false) {
+            running = true;
+            queueLoop();
+            console.log("running");
+          }
+        }
+      });
+
+      if (PARSED.type === "chatSize") {
+        let data = { ...chatTransform() };
+        const { height, width, posX, posY } = PARSED;
+        if (height) {
+          data.height = height;
+        }
+        if (width) {
+          data.width = width;
+        }
+        if (posX) {
+          data.posX = posX;
+        }
+        if (posY) {
+          data.posY = posY;
+        }
+        setchatTransform(data);
+        localStorage.setItem("chatStuff", JSON.stringify(data));
+      }
+
+      if (PARSED.type === "chatDelete") {
+        const { id } = PARSED;
+        Messages.forEach((messages, index) => {
+          if (id === messages.from?.id) {
+            let array = [...Messages];
+            array.splice(index, 1);
+            SetMessage(array);
+          }
+        });
+      }
+
+      if (PARSED.type === "chatUserDelete") {
+        const { username } = PARSED;
+        let newArray: chatMessage[] = [];
+        Messages.forEach((message) => {
+          if (username.toLowerCase() !== message.from?.name.toLowerCase()) {
+            newArray.push(message);
+          }
+        });
+        SetMessage(newArray);
+      }
+
+      if (PARSED.type === "chatMessage") {
+        const { message, username, userType, emotes, colour, messageId } =
+          PARSED;
+
+        type IndexData = {
+          index: number;
+        } & (
+          | { emoteId: string; source: "twitch" }
+          | { src: string; source: "custom" }
+        );
+
+        let indexes = new Map<number, IndexData>();
+
+        message
+          .split(" ")
+          .reduce((acc, word) => {
+            const prev = acc.at(-1);
+
+            if (!prev) {
+              return [{ text: word, startIndex: 0 }];
+            }
+
+            return [
+              ...acc,
+              {
+                text: word,
+                startIndex: prev.startIndex + prev.text.length + 1,
+              },
+            ];
+          }, [] as { text: string; startIndex: number }[])
+          .forEach(({ text, startIndex }) => {
+            if (emotelist[text]) {
+              let end = text.length - 1;
+              indexes.set(startIndex, {
+                index: startIndex + end,
+                src: emotelist[text].url,
+                source: "custom",
+              });
+            }
+          });
+
+        Object.entries(emotes).forEach(([key, data]) => {
+          data.forEach((element: string) => {
+            let indexArray = element.split("-");
+            indexes.set(Number(indexArray[0]), {
+              index: Number(indexArray[1]),
+              emoteId: key,
+              source: "twitch",
+            });
+          });
+        });
+
+        let contents: chatMessage["contents"] = [];
+
+        for (let i = 0; i < message.length; i++) {
+          const entry = indexes.get(i);
+
+          if (entry) {
+            if (entry.source === "twitch") {
+              contents.push({
+                type: "emote",
+                src: `https://static-cdn.jtvnw.net/emoticons/v2/${entry.emoteId}/default/dark/1.0`,
+              });
+
+              i = Number(entry.index);
+              //https://static-cdn.jtvnw.net/emoticons/v2/303888087/default/dark/1.0
+            } else {
+              if (entry.source === "custom") {
+                contents.push({
+                  type: "emote",
+                  src: entry.src,
+                });
+                i = Number(entry.index);
+              }
+            }
+          } else {
+            contents.push({ type: "text", text: message[i] });
+          }
+        }
+
+        SetMessage(
+          produce((messages) => {
+            if (messages.length === 40) {
+              messages.splice(0, 1);
+            }
+
+            messages.push({
+              from: {
+                name: username,
+                color: colour,
+                id: messageId,
+                userType: userType === "" ? undefined : (userType as UserType),
+              },
+              contents,
+            });
+          })
+        );
+      }
+    });
+  }
 
   const eventLogic = (event: taskbar) => {
     setNewEvent(
@@ -185,160 +348,6 @@ export default function () {
       if (queue.length === 0) running = false;
     }, 550);
   };
-
-  ws.addEventListener("message", (data) => {
-    const PARSED = MESSAGE.parse(JSON.parse(data.data));
-    batch(() => {
-      if (PARSED.type === "event") {
-        const { event, type, message, username, amount } = PARSED;
-        queue.unshift({ event, type, message, username, amount });
-        if (running === false) {
-          running = true;
-          queueLoop();
-          console.log("running");
-        }
-      }
-    });
-
-    if (PARSED.type === "chatSize") {
-      let data = { ...chatTransform() };
-      const { height, width, posX, posY } = PARSED;
-      if (height) {
-        data.height = height;
-      }
-      if (width) {
-        data.width = width;
-      }
-      if (posX) {
-        data.posX = posX;
-      }
-      if (posY) {
-        data.posY = posY;
-      }
-      setchatTransform(data);
-      localStorage.setItem("chatStuff", JSON.stringify(data));
-    }
-
-    if (PARSED.type === "chatDelete") {
-      const { id } = PARSED;
-      Messages.forEach((messages, index) => {
-        if (id === messages.from?.id) {
-          let array = [...Messages];
-          array.splice(index, 1);
-          SetMessage(array);
-        }
-      });
-    }
-
-    if (PARSED.type === "chatUserDelete") {
-      const { username } = PARSED;
-      let newArray: chatMessage[] = [];
-      Messages.forEach((message) => {
-        if (username.toLowerCase() !== message.from?.name.toLowerCase()) {
-          newArray.push(message);
-        }
-      });
-      SetMessage(newArray);
-    }
-
-    if (PARSED.type === "chatMessage") {
-      const { message, username, userType, emotes, colour, messageId } = PARSED;
-
-      type IndexData = {
-        index: number;
-      } & (
-        | { emoteId: string; source: "twitch" }
-        | { src: string; source: "custom" }
-      );
-
-      let indexes = new Map<number, IndexData>();
-
-      message
-        .split(" ")
-        .reduce((acc, word) => {
-          const prev = acc.at(-1);
-
-          if (!prev) {
-            return [{ text: word, startIndex: 0 }];
-          }
-
-          return [
-            ...acc,
-            {
-              text: word,
-              startIndex: prev.startIndex + prev.text.length + 1,
-            },
-          ];
-        }, [] as { text: string; startIndex: number }[])
-        .forEach(({ text, startIndex }) => {
-          if (emotelist[text]) {
-            let end = text.length - 1;
-            indexes.set(startIndex, {
-              index: startIndex + end,
-              src: emotelist[text].url,
-              source: "custom",
-            });
-          }
-        });
-
-      Object.entries(emotes).forEach(([key, data]) => {
-        data.forEach((element: string) => {
-          let indexArray = element.split("-");
-          indexes.set(Number(indexArray[0]), {
-            index: Number(indexArray[1]),
-            emoteId: key,
-            source: "twitch",
-          });
-        });
-      });
-
-      let contents: chatMessage["contents"] = [];
-
-      for (let i = 0; i < message.length; i++) {
-        const entry = indexes.get(i);
-
-        if (entry) {
-          if (entry.source === "twitch") {
-            contents.push({
-              type: "emote",
-              src: `https://static-cdn.jtvnw.net/emoticons/v2/${entry.emoteId}/default/dark/1.0`,
-            });
-
-            i = Number(entry.index);
-            //https://static-cdn.jtvnw.net/emoticons/v2/303888087/default/dark/1.0
-          } else {
-            if (entry.source === "custom") {
-              contents.push({
-                type: "emote",
-                src: entry.src,
-              });
-              i = Number(entry.index);
-            }
-          }
-        } else {
-          contents.push({ type: "text", text: message[i] });
-        }
-      }
-
-      SetMessage(
-        produce((messages) => {
-          if (messages.length === 40) {
-            messages.splice(0, 1);
-          }
-
-          messages.push({
-            from: {
-              name: username,
-              color: colour,
-              id: messageId,
-              userType: userType === "" ? undefined : (userType as UserType),
-            },
-            contents,
-          });
-        })
-      );
-    }
-  });
 
   setInterval(() => {
     let d = new Date();
@@ -393,7 +402,7 @@ export default function () {
                             </>
                           )}
                           <span style={`color: ${message.from.color}`}>
-                            {message.from.name} 
+                            {message.from.name}
                           </span>
                           {`> `}
                         </>
