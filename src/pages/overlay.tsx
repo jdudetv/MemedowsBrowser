@@ -150,6 +150,8 @@ export default function () {
     console.log(Messages);
   });
 
+  connect();
+
   function connect() {
     const ws = startWS("ws://localhost:1890");
 
