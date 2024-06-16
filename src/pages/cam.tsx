@@ -59,7 +59,7 @@ export default function () {
     .then(async () => {
       await obs
         .call("GetSceneItemTransform", {
-          sceneItemId: 3,
+          sceneItemId: 15,
           sceneName: "CAMFORMAIN",
         })
         .then((data) => {
