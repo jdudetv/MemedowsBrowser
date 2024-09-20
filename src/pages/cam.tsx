@@ -76,7 +76,7 @@ export default function () {
 
 	obs.on("SceneItemTransformChanged", (data) => {
 		console.log(data);
-		if (data.sceneItemId === 15 && data.sceneName === "CAMFORMAIN") {
+		if (data.sceneItemId === 1 && data.sceneName === "CAMFORMAIN") {
 			// @ts-ignore
 			let t = data.sceneItemTransform as SceneItemTransform;
 			if (t) {
