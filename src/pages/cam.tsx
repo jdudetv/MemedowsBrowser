@@ -48,6 +48,12 @@ export default function () {
 
 	const obs = new OBSWebSocket();
 
+	const params = new URLSearchParams(window.location.search);
+
+	const itemid = Number(params.get("itemid"));
+
+	const scene = params.get("scene") ?? "CAMFORMAIN";
+
 	obs
 		.connect("ws://localhost:4455", "", {
 			eventSubscriptions:
@@ -59,8 +65,8 @@ export default function () {
 		.then(async () => {
 			await obs
 				.call("GetSceneItemTransform", {
-					sceneItemId: 1,
-					sceneName: "CAMFORMAIN",
+					sceneItemId: itemid,
+					sceneName: scene,
 				})
 				.then((data) => {
 					// @ts-ignore
@@ -76,7 +82,7 @@ export default function () {
 
 	obs.on("SceneItemTransformChanged", (data) => {
 		console.log(data);
-		if (data.sceneItemId === 1 && data.sceneName === "CAMFORMAIN") {
+		if (data.sceneItemId === itemid && data.sceneName === scene) {
 			// @ts-ignore
 			let t = data.sceneItemTransform as SceneItemTransform;
 			if (t) {
