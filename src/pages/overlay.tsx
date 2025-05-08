@@ -20,10 +20,6 @@ import startBarUp from "../../images/StartBarUp.png";
 import rightCorner from "../../images/RightCornerOverlay.png";
 const images = import.meta.glob("../../images/*.png", { eager: true });
 
-const pronouns = await fetch("https://api.pronouns.alejo.io/v1/pronouns", {
-	method: "GET",
-}).then((resp) => resp.json());
-
 type UserType = "B" | "VIP" | "MOD" | "SUB";
 
 const userTypeClasses = {
@@ -101,7 +97,10 @@ type taskbar = {
 	amount?: number;
 };
 
-export default function () {
+export default async function () {
+	const pronouns = await fetch("https://api.pronouns.alejo.io/v1/pronouns", {
+		method: "GET",
+	}).then((resp) => resp.json());
 	const emotelist = useContext(EmotesContext)!;
 	let chatstuff = JSON.parse(
 		localStorage.getItem("chatStuff") ??
