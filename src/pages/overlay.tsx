@@ -319,18 +319,22 @@ export default function () {
 							{
 								method: "GET",
 							},
-						).then((resp) => resp.json());
+						).then((resp) => {
+							return resp.status === 404 ? { user: "none" } : resp.json();
+						});
 						let pro = "";
-						let primary = pronouns()[user.pronoun_id];
-						let alt = pronouns()[user.alt_pronoun_id];
+						if (user.user !== "none") {
+							let primary = pronouns()[user.pronoun_id];
+							let alt = pronouns()[user.alt_pronoun_id];
 
-						if (alt) {
-							pro = `${primary.subject}/${alt.subject}`;
-						} else {
-							if (!primary.singular) {
-								pro = `${primary.subject}/${primary.object}`;
+							if (alt) {
+								pro = `${primary.subject}/${alt.subject}`;
 							} else {
-								pro = `${primary.subject}`;
+								if (!primary.singular) {
+									pro = `${primary.subject}/${primary.object}`;
+								} else {
+									pro = `${primary.subject}`;
+								}
 							}
 						}
 
@@ -435,10 +439,12 @@ export default function () {
 													<span style={`color: ${message.from.color}`}>
 														{message.from.name}
 													</span>
-													\
-													<span style={`color: ${message.from.color}`}>
-														{message.from.pronoun}
-													</span>
+													{message.from.pronoun !== "" && <>\</>}
+													{message.from.pronoun !== "" && (
+														<span style={`color: ${message.from.color}`}>
+															{message.from.pronoun}
+														</span>
+													)}
 													{`> `}
 												</>
 											)}
