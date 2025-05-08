@@ -131,6 +131,7 @@ export default function () {
 	};
 
 	pronow();
+
 	const [Messages, SetMessage] = createStore<chatMessage[]>(
 		JSON.parse(
 			localStorage.getItem("messages") ??
