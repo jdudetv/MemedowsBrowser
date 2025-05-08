@@ -33,6 +33,7 @@ type chatMessage = {
 	from?: {
 		name: string;
 		color: string;
+		pronoun: string;
 		userType?: UserType;
 		id: string;
 	};
@@ -335,7 +336,8 @@ export default function () {
 
 						messages.push({
 							from: {
-								name: `${username}\\${pro}`,
+								pronoun: pro,
+								name: username,
 								color: colour,
 								id: messageId,
 								userType: userType === "" ? undefined : (userType as UserType),
@@ -432,6 +434,10 @@ export default function () {
 													)}
 													<span style={`color: ${message.from.color}`}>
 														{message.from.name}
+													</span>
+													\
+													<span style={`color: ${message.from.color}`}>
+														{message.from.pronoun}
 													</span>
 													{`> `}
 												</>
