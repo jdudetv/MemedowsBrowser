@@ -124,10 +124,10 @@ export default function () {
 		),
 	);
 
-	const pronow = () => {
+	const pronow = async () => {
 		fetch("https://api.pronouns.alejo.io/v1/pronouns", {
 			method: "GET",
-		}).then((resp) => setPronouns(resp.json()));
+		}).then(async (resp) => setPronouns(await resp.json()));
 	};
 
 	pronow();
@@ -226,6 +226,7 @@ export default function () {
 			}
 
 			if (PARSED.type === "chatMessage") {
+				console.log(pronouns());
 				const { message, username, userType, emotes, colour, messageId } =
 					PARSED;
 
