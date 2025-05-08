@@ -97,10 +97,7 @@ type taskbar = {
 	amount?: number;
 };
 
-export default async function () {
-	const pronouns = await fetch("https://api.pronouns.alejo.io/v1/pronouns", {
-		method: "GET",
-	}).then((resp) => resp.json());
+export default function () {
 	const emotelist = useContext(EmotesContext)!;
 	let chatstuff = JSON.parse(
 		localStorage.getItem("chatStuff") ??
@@ -108,6 +105,7 @@ export default async function () {
 	);
 	let queue: taskbar[] = [];
 	let running = false;
+	const [pronouns, setPronouns] = createSignal<any>();
 	const [time, setTime] = createSignal<string>("");
 	const [chatTransform, setchatTransform] = createSignal<chatProps>(chatstuff);
 	const [newEvents, setNewEvent] = createStore<taskbar[]>(
@@ -125,6 +123,14 @@ export default async function () {
 				]),
 		),
 	);
+
+	const pronow = () => {
+		fetch("https://api.pronouns.alejo.io/v1/pronouns", {
+			method: "GET",
+		}).then((resp) => setPronouns(resp.json()));
+	};
+
+	pronow();
 	const [Messages, SetMessage] = createStore<chatMessage[]>(
 		JSON.parse(
 			localStorage.getItem("messages") ??
@@ -312,8 +318,8 @@ export default async function () {
 							},
 						).then((resp) => resp.json());
 						let pro = "";
-						let primary = pronouns[user.pronoun_id];
-						let alt = pronouns[user.alt_pronoun_id];
+						let primary = pronouns()[user.pronoun_id];
+						let alt = pronouns()[user.alt_pronoun_id];
 
 						if (alt) {
 							pro = `${primary.subject}/${alt.subject}`;
