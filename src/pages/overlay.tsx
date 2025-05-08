@@ -20,6 +20,10 @@ import startBarUp from "../../images/StartBarUp.png";
 import rightCorner from "../../images/RightCornerOverlay.png";
 const images = import.meta.glob("../../images/*.png", { eager: true });
 
+const pronouns = await fetch("https://api.pronouns.alejo.io/v1/pronouns", {
+	method: "GET",
+}).then((resp) => resp.json());
+
 type UserType = "B" | "VIP" | "MOD" | "SUB";
 
 const userTypeClasses = {
@@ -297,14 +301,34 @@ export default function () {
 				});
 
 				SetMessage(
-					produce((messages) => {
+					produce(async (messages) => {
 						if (messages.length === 40) {
 							messages.splice(0, 1);
 						}
 
+						const user = await fetch(
+							`https://api.pronouns.alejo.io/v1/users/${username}`,
+							{
+								method: "GET",
+							},
+						).then((resp) => resp.json());
+						let pro = "";
+						let primary = pronouns[user.pronoun_id];
+						let alt = pronouns[user.alt_pronoun_id];
+
+						if (alt) {
+							pro = `${primary.subject}/${alt.subject}`;
+						} else {
+							if (!primary.singular) {
+								pro = `${primary.subject}/${primary.object}`;
+							} else {
+								pro = `${primary.subject}`;
+							}
+						}
+
 						messages.push({
 							from: {
-								name: username,
+								name: `${username}\\${pro}`,
 								color: colour,
 								id: messageId,
 								userType: userType === "" ? undefined : (userType as UserType),
